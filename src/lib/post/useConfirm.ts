@@ -40,6 +40,7 @@ export default (
   const {
     contents,
     msgs,
+    tax,
     feeDenom,
     validate,
     warning,
@@ -182,7 +183,7 @@ export default (
       }
 
       const gasFee = new Coins({ [fee.denom]: fee.amount })
-      const fees = gasFee
+      const fees = tax ? gasFee.add(tax) : gasFee
       unsignedTx.auth_info.fee = new Fee(
         unsignedTx.auth_info.fee.gas_limit,
         fees

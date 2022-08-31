@@ -5,13 +5,14 @@ interface Params {
   amount: string
   denom: string
   fee: CoinItem
+  tax?: CoinItem
 }
 
 type Validate = (params: Params, balance: Balance[] | BalanceV2[], isClassic?: boolean) => boolean
 
 export const isAvailable: Validate = (params, balance, isClassic) => {
-  const { amount, denom, fee } = params
-  const total = amount
+  const { amount, denom, fee, tax } = params
+  const total = plus(amount, tax?.amount ?? '0')
   const available = find(`${denom}:${isClassic ? 'available' : 'amount'}`, balance) || '0'
 
   return fee.denom === denom

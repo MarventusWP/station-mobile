@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Dictionary, without } from 'ramda'
-import { Coin } from '@terra-money/terra.js'
+import { Coin, Coins } from '@terra-money/terra.js'
 import {
   Msg,
   MsgExecuteContract,
@@ -19,6 +19,7 @@ import { toInput } from '../utils/format'
 import { useConfig } from '../contexts/ConfigContext'
 import { getFeeDenomList, isFeeAvailable } from './validateConfirm'
 import { useActiveDenoms, useForm } from '../index'
+import useCalcTaxes from './useCalcTaxes'
 import { simulateMarket } from './useSwap'
 import { getTerraswapURL, simulateTerraswap } from './terraswap'
 import { findPairDex, getRouteMessage, simulateRoute } from './routeswap'
@@ -42,6 +43,9 @@ export default (user: User, { bank, pairs }: Params): PostPage => {
   )
 
   const balanceDenoms = validBankBalanceList.map(({ denom }) => denom)
+  const { getTax, loading: loadingTaxes } = useCalcTaxes(
+    balanceDenoms
+  )
 
   type OptionItem = { key: string; label: string; available: string }
   const options: OptionItem[] = validBankBalanceList.map(
@@ -59,7 +63,8 @@ export default (user: User, { bank, pairs }: Params): PostPage => {
     {}
   )
 
-  const getAmount = (denom: string): string => availableList[denom]
+  const getAmountAfterTax = (denom: string): string =>
+    minus(availableList[denom], getTax(availableList[denom], denom))
 
   /* form */
   const hasLunaOnly =
@@ -75,7 +80,7 @@ export default (user: User, { bank, pairs }: Params): PostPage => {
   const { to } = values
 
   const [checked, setChecked] = useState<string[]>([])
-  const readyToSimulate = true
+  const readyToSimulate = !loadingTaxes
 
   /* simulate */
   const [isSimulating, setIsSimulating] = useState(false)
@@ -94,10 +99,10 @@ export default (user: User, { bank, pairs }: Params): PostPage => {
     (denom) => denom !== to
   )
   const terraswapList = balanceDenomsWithoutTo
-    .filter((denom) => gt(getAmount(denom), '1'))
+    .filter((denom) => gt(getAmountAfterTax(denom), '1'))
     .filter(isTerraswap)
   const routeswapList = balanceDenomsWithoutTo
-    .filter((denom) => gt(getAmount(denom), '1'))
+    .filter((denom) => gt(getAmountAfterTax(denom), '1'))
     .filter((denom) => !isTerraswap(denom))
 
   useEffect(() => {
@@ -108,7 +113,7 @@ export default (user: User, { bank, pairs }: Params): PostPage => {
       if (to === 'uluna') {
         // terraswap
         const simulateTerraswapList = terraswapList.map((from) => {
-          const amount = getAmount(from)
+          const amount = getAmountAfterTax(from)
           return simulateTerraswap(
             {
               pair: findPairDex({ from, to }, pairs, DexType.TERRASWAP)?.address,
@@ -134,7 +139,7 @@ export default (user: User, { bank, pairs }: Params): PostPage => {
         const simulateRouteswapList = routeswapList.map(
           async (from) => {
             try {
-              const amount = getAmount(from)
+              const amount = getAmountAfterTax(from)
               const params = {
                 from,
                 to,
@@ -207,7 +212,7 @@ export default (user: User, { bank, pairs }: Params): PostPage => {
 
   const msgsTerraswap = terraswapChecked.reduce<Msg[]>(
     (acc, from) => {
-      const amount = getAmount(from)
+      const amount = getAmountAfterTax(from)
       const terraswap = getTerraswapURL(
         {
           pair: findPairDex({ from, to }, pairs, DexType.TERRASWAP)?.address,
@@ -223,7 +228,7 @@ export default (user: User, { bank, pairs }: Params): PostPage => {
   )
 
   const msgsRouteswap = routeswapChecked.map((from) => {
-    const amount = getAmount(from)
+    const amount = getAmountAfterTax(from)
     const params = { amount, from, to, chain: chain.current }
     const { execute } = getRouteMessage(params)
     const { contract, msg, coins } = execute
@@ -335,19 +340,41 @@ export default (user: User, { bank, pairs }: Params): PostPage => {
 
   const getConfirm = (): ConfirmProps => ({
     msgs,
+    tax:
+      to === 'uluna'
+        ? new Coins(
+            checked.map(
+              (denom) =>
+                new Coin(denom, getTax(availableList[denom], denom))
+            )
+          )
+        : undefined,
     contents: [
       {
         name: t('Common:Tx:Amount'),
         displays: checked.map((denom) => {
           const amount =
             to === 'uluna'
-              ? getAmount(denom)
+              ? getAmountAfterTax(denom)
               : availableList[denom]
 
           return format.display({ amount, denom })
         }),
       },
     ]
+      .concat(
+        to === 'uluna'
+          ? [
+              {
+                name: t('Post:Send:Tax'),
+                displays: checked.map((denom) => {
+                  const amount = getTax(availableList[denom], denom)
+                  return format.display({ amount, denom })
+                }),
+              },
+            ]
+          : []
+      )
       .concat([
         {
           name: t('Post:Swap:Receive'),

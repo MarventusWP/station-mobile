@@ -5,7 +5,7 @@ import {
   Coins,
   MsgExecuteContract,
 } from '@terra-money/terra.js'
-import { BankData, CoinFields } from '../types'
+import { BankData, BankDataV2, CoinFields } from '../types'
 import {
   PostPage,
   CoinItem as TerraCoin,
@@ -84,7 +84,7 @@ export default (
     onSubmit: disabled ? undefined : (): void => setSubmitted(true),
   }
 
-  const getConfirm = (bank: BankData): ConfirmProps => ({
+  const getConfirm = (bank: BankData|BankDataV2): ConfirmProps => ({
     msgs: [
       new MsgExecuteContract(
         user.address,

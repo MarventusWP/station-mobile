@@ -1,10 +1,10 @@
 import { DisplayCoin } from '..'
 import { Field } from '../common/form'
-import { BankData } from '../data/bank'
+import { BankData, BankDataV2 } from '../data/bank'
 import { CW20Pairs } from '..'
 
 export interface SwapUI {
-  bank?: BankData
+  bank?: BankData|BankDataV2
   pairs?: CW20Pairs
   mode: string
   message: string

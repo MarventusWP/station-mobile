@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import _ from 'lodash'
 import { MsgExecuteContract, MsgSend } from '@terra-money/terra.js'
 import { Coin } from '@terra-money/terra.js'
-import { BankData, Whitelist } from '../types'
+import { BankData, BankDataV2, Whitelist } from '../types'
 import { PostPage, CoinItem, User, Field } from '../types'
 import { ConfirmContent, ConfirmProps } from '../types'
 import { format, find } from '../utils'
@@ -204,7 +204,7 @@ export default (
     .concat(memo ? { name: t('Common:Tx:Memo'), text: memo } : [])
 
   const getConfirm = (
-    bank: BankData,
+    bank: BankData|BankDataV2,
     whitelist: Whitelist
   ): ConfirmProps => ({
     msgs:

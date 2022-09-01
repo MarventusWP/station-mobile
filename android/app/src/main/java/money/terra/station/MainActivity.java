@@ -38,7 +38,7 @@ public class MainActivity extends ReactActivity {
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    SplashScreen.show(this, R.style.SplashTheme);
+    SplashScreen.show(this, R.style.SplashTheme, true);
 
     PreventCapture.Companion.setActivity(this);
     Utils.INSTANCE.clearCookies(this);

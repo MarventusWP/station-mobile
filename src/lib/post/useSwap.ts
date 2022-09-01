@@ -8,6 +8,7 @@ import {
   SwapUI,
   ConfirmProps,
   BankData,
+  BankDataV2,
   Whitelist,
   SwapMode,
   Mode,
@@ -18,19 +19,10 @@ import {
   CoinItem as StationCoin,
   Rate,
   Field,
-  FormUI,
+  FormUI
 } from '../types'
 import { find, format } from '../utils'
-import {
-  gt,
-  gte,
-  lte,
-  times,
-  percent,
-  plus,
-  minus,
-  div,
-} from '../utils'
+import { gt, gte, lte, times, percent, minus, div, plus } from '../utils'
 import { max, floor, isFinite, isInteger } from '../utils'
 import { toInput, toAmount, decimalN } from '../utils/format'
 import { useConfig } from '../contexts/ConfigContext'
@@ -768,7 +760,7 @@ export default (user: User, actives: string[]): PostPage<SwapUI> => {
       }[mode] || []
 
   const getConfirm = (
-    bank: BankData,
+    bank: BankData|BankDataV2,
     whitelist: Whitelist
   ): ConfirmProps => ({
     msgs,

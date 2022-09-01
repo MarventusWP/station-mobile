@@ -72,7 +72,7 @@ export interface ButtonAttrs {
 export type Options = Option[]
 export type Option = {
   value: string
-  children: string
+  children?: string
   disabled?: boolean
   icon?: string
   balance?: string
